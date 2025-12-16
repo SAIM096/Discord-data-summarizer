@@ -47,15 +47,24 @@ namespace DiscordDataSummarizer
             string read = @"" + Console.ReadLine(); // Worlds worst implementation idk how ppl normally do this
             bool show_extra_debug = (read) == "Y" || (read == "y");
 
-            // Get debug info
+            // Get graph info
             Console.WriteLine("Create graphs for message activity? Y/N\nNote: this will create a file in " + read_path + " and will open the file upon completion.");
             string read_graph = @"" + Console.ReadLine(); // Still the worlds worst implementation
             bool do_graphing = (read_graph) == "Y" || (read_graph == "y");
 
-            DoStuff(read_path, show_extra_debug, do_graphing);
+            bool dark_graph = false;
+            if (do_graphing)
+            {
+
+                Console.WriteLine("Would you like the graph to be dark mode? Y/N");
+                string read_darkgraph = @"" + Console.ReadLine(); // Still the worlds worst implementation
+                dark_graph = (read_darkgraph) == "Y" || (read_darkgraph == "y");
+            }
+
+            DoStuff(read_path, show_extra_debug, do_graphing, dark_graph);
         }
 
-        static void DoStuff(string dir, bool show_extra_debug, bool do_graphing)
+        static void DoStuff(string dir, bool show_extra_debug, bool do_graphing, bool dark_graph)
         {
 
             int MessagesIn2025 = 0;
@@ -71,6 +80,8 @@ namespace DiscordDataSummarizer
             SortedDictionary<long, long> MessagesPerChannel2022 = new SortedDictionary<long, long>();
             SortedDictionary<long, long> MessagesPerChannel2021 = new SortedDictionary<long, long>();
             SortedDictionary<long, long> MessagesPerChannel2020 = new SortedDictionary<long, long>();
+
+            SortedDictionary<DateTime, long> MessagesPerDay = new SortedDictionary<DateTime, long>();
 
             // graph plotting data, wont be written to unless do_graphing is true
             ScottPlot.Plot summaryPlot = new();
@@ -176,6 +187,16 @@ namespace DiscordDataSummarizer
                             }
                         }
 
+                        if (!MessagesPerDay.ContainsKey(msg.Timestamp.Date))
+                        {
+
+                            MessagesPerDay[msg.Timestamp.Date] = 1;
+                        } else
+                        {
+
+                            MessagesPerDay[msg.Timestamp.Date] += 1;
+                        }
+
                         if (msg.Timestamp.Year == 2025)
                         {
 
@@ -233,6 +254,19 @@ namespace DiscordDataSummarizer
             Console.WriteLine("this many messages were in 2022: " + MessagesIn2022.ToString());
             Console.WriteLine("this many messages were in 2021: " + MessagesIn2021.ToString());
             Console.WriteLine("this many messages were in 2020: " + MessagesIn2020.ToString());
+
+            var max_day = MessagesPerDay.OrderByDescending(d => d.Value).ToArray();
+            Console.WriteLine("your most active days (month/day/year): \n    " +
+                "#1: " + max_day[0].Value.ToString() + " | " + max_day[0].Key.ToString("dd/MM/yyyy") + " \n    " +
+                "#2: " + max_day[1].Value.ToString() + " | " + max_day[1].Key.ToString("dd/MM/yyyy") + " \n    " +
+                "#3: " + max_day[2].Value.ToString() + " | " + max_day[2].Key.ToString("dd/MM/yyyy") + " \n    " +
+                "#4: " + max_day[3].Value.ToString() + " | " + max_day[3].Key.ToString("dd/MM/yyyy") + " \n    " +
+                "#5: " + max_day[4].Value.ToString() + " | " + max_day[4].Key.ToString("dd/MM/yyyy") + " \n    " +
+                "#6: " + max_day[5].Value.ToString() + " | " + max_day[5].Key.ToString("dd/MM/yyyy") + " \n    " +
+                "#7: " + max_day[6].Value.ToString() + " | " + max_day[6].Key.ToString("dd/MM/yyyy") + " \n    " +
+                "#8: " + max_day[7].Value.ToString() + " | " + max_day[7].Key.ToString("dd/MM/yyyy") + " \n    " +
+                "#9: " + max_day[8].Value.ToString() + " | " + max_day[8].Key.ToString("dd/MM/yyyy") + " \n    " +
+                "#10: " + max_day[9].Value.ToString() + " | " + max_day[9].Key.ToString("dd/MM/yyyy") + " \n ");
 
             Console.WriteLine("\n");
             Console.WriteLine("WARN!: if there were no messages in a year, it might show random channels here but idk what it does it might just be wrong\n");
@@ -302,6 +336,26 @@ namespace DiscordDataSummarizer
                 summaryPlot.YLabel("Time of day");
                 summaryPlot.XLabel("Date");
                 summaryPlot.ScaleFactor = 3;
+
+                // Dark mode
+                if (dark_graph)
+                {
+
+                    sp.MarkerColor = Color.FromHex("#9849bf");
+
+                    // change figure colors
+                    summaryPlot.FigureBackground.Color = Color.FromHex("#181818");
+                    summaryPlot.DataBackground.Color = Color.FromHex("#1f1f1f");
+
+                    // change axis and grid colors
+                    summaryPlot.Axes.Color(Color.FromHex("#d7d7d7"));
+                    summaryPlot.Grid.MajorLineColor = Color.FromHex("#404040");
+                }
+
+                ScottPlot.AutoScalers.FractionalAutoScaler scaler = new ScottPlot.AutoScalers.FractionalAutoScaler();
+                scaler.SetMarginsX(0.001);
+                scaler.SetMarginsY(0.001);
+                summaryPlot.Axes.AutoScaler = scaler;
 
                 //summaryPlot.Layout.Fixed(new PixelPadding(128, 128, 128, 128));
 
